@@ -1,0 +1,16 @@
+{
+    "tooltips": [
+        {
+            "id": "node_1",
+            "html": "<h2>Organization</h2><p>Neuralink</p>"
+        },
+        {
+            "id": "node_2",
+            "html": "<h2>Organization</h2><p>SpaceX</p>"
+        },
+        {
+            "id": "node_11",
+            "html": "<h2>Person</h2><p>ElNo</p>"
+        }
+    ]
+}
