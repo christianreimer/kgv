@@ -1,39 +1,37 @@
-
-
-var knowledge_graph_json = {};
+var jsonData = {};
+var nodes = []
+var edges = []
 
 // https://javascript.info/fetch
 let response = await fetch('./data.json');
 
 if (response.ok) { // if HTTP-status is 200-299
-    knowledge_graph_json = await response.json();
+    jsonData = await response.json();
 } else {
     alert("HTTP-Error: " + response.status);
 }
 
 
-var nodes = []
-var edges = []
 
-for (const i in knowledge_graph_json['entities']) {
+for (const i in jsonData['entities']) {
     nodes.push({
         data: {
-            id: knowledge_graph_json['entities'][i]['id'],
-            title: knowledge_graph_json['entities'][i]['title'],
-            size: knowledge_graph_json['entities'][i]['title'].length * 3,
-            color: knowledge_graph_json['entities'][i]['color']
+            id: jsonData['entities'][i]['id'],
+            title: jsonData['entities'][i]['title'],
+            size: jsonData['entities'][i]['title'].length * 4,
+            color: jsonData['entities'][i]['color']
         }
     });
 }
 
-for (const i in knowledge_graph_json['relations']) {
+for (const i in jsonData['relations']) {
     edges.push({
         data: {
             id: i,
-            source: knowledge_graph_json['relations'][i]['source'],
-            target: knowledge_graph_json['relations'][i]['target'],
-            label: knowledge_graph_json['relations'][i]['type'],
-            weight: knowledge_graph_json['relations'][i]['weight'],
+            source: jsonData['relations'][i]['source'],
+            target: jsonData['relations'][i]['target'],
+            label: jsonData['relations'][i]['type'],
+            weight: jsonData['relations'][i]['weight'],
         }
     });
 }
@@ -50,8 +48,8 @@ let cy = cytoscape({
             style: {
                 "text-valign": "center",
                 "text-halign": "center",
-                "color": '#ccc',
-                "font-size": "10px",
+                "color": '#333',
+                "font-size": "8px",
                 "font-family": "helvetica",
                 "label": 'data(title)',
                 "width": 'data(size)',
@@ -64,16 +62,17 @@ let cy = cytoscape({
         {
             selector: 'edge',
             style: {
-                'width': 2,
-                'line-color': '#333',
-                'target-arrow-color': '#333',
+                'opacity': 1,
+                'width': 'data(weight)',
+                'line-color': '#666',
+                'target-arrow-color': '#666',
                 'target-arrow-shape': 'triangle',
                 'curve-style': 'bezier',
                 'label': 'data(label)',
                 'color': '#ccc',
                 "font-size": "6px",
                 "font-family": "helvetica",
-                'text-background-color': '#123',
+                'text-background-color': '#111',
                 'text-background-opacity': 0.75,
                 'text-background-padding': '1px',
                 'text-wrap': 'wrap',
@@ -93,38 +92,47 @@ cy.layout({
     idealEdgeLength: edge => 50,
     nodeRepulsion: node => 14500,
     numIter: 5000,
-    tile: true,
 }).run();
 
 function makePopper(ele) {
-    let ref = ele.popperRef(); // used only for positioning
+    let ref = ele.popperRef();
 
     ele.tippy = tippy(ref, {
-        content: function () {
-            let div = document.createElement('div');
-            // document.body.appendChild(div);
-            let contentText = "<div id=" + ele.id() + "></div";
-            div.innerHTML = contentText;
-            return div;
-        },
         onShow: () => {
+            // Clicking the node is a toggle, so if already shown, hide it
+            if (ref._tippy.shown) {
+                ref._tippy.hide();
+                ref._tippy.shown = false;
+                return false;
+            }
+
             fetch('./tooltips.json')
                 .then(response => response.json())
                 .then(data => {
+                    let content;
                     const i = data["tooltips"].findIndex((e) => e.id === ele.id());
-                    // let content = data["tooltips"].filter((e) => e.id === ele.id());
-                    let html;
                     if (i > -1) {
-                        html = data["tooltips"][i]["html"]
-                    } else {
-                        html = "No tooltip available for this entity."
+                        content = data["tooltips"][i]["html"];
+                    }
+                    else {
+                        content = 'Such Emptiness 😞';
                     }
 
-                    ref._tippy.setContent(html);
+                    let div = document.createElement('div');
+                    div.classList.add('ttip');
+                    div.addEventListener('click', () => {
+                        ref._tippy.hide();
+                        ref._tippy.shown = false;
+                    });
+                    div.innerHTML = content;
+                    ref._tippy.setContent(div);
+                    ref._tippy.shown = true;
                 });
         },
         trigger: 'manual',
+        interactive: true,
         arrow: true,
+        hideOnClick: false,
     });
 }
 
@@ -134,10 +142,7 @@ cy.ready(() => {
     });
 });
 
-cy.elements().unbind('mouseover');
-cy.elements().bind('mouseover', (event) => {
+cy.elements().unbind('click')
+cy.elements().bind('click', (event) => {
     event.target.tippy.show();
 });
-
-cy.elements().unbind('mouseout');
-cy.elements().bind('mouseout', (event) => event.target.tippy.hide());

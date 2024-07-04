@@ -10,7 +10,6 @@
     <script src="https://cdn.jsdelivr.net/npm/cytoscape-popper@1.0.4/cytoscape-popper.min.js"></script>
     <script src="https://unpkg.com/tippy.js@4.0.1/umd/index.all.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/tippy.js@4.0.1/index.css" />
-
 </head>
 <style>
     #cy {
@@ -21,10 +20,18 @@
         left: 0px;
         background: #111;
     }
+
+    .ttip {
+        max-width: 300px;
+        font-family: Arial, sans-serif;
+        font-size: 1.25em;
+        line-height: 1.25em;
+        text-align: left;
+    }
 </style>
 
 <body>
-  <div id="cy"></div>
+    <div id="cy"></div>
 </body>
 
 <script src="./graph.js" type="module"></script>
