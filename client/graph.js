@@ -3,38 +3,43 @@ var nodes = []
 var edges = []
 
 // https://javascript.info/fetch
-let response = await fetch('./data.json');
+// let response = await fetch('./data.json');
+let response = await fetch('http://localhost:8080/api/graph');
+console.log(response);
 
 if (response.ok) { // if HTTP-status is 200-299
     jsonData = await response.json();
+    console.log(jsonData);
 } else {
     alert("HTTP-Error: " + response.status);
 }
 
+nodes = jsonData['nodes'];
+edges = jsonData['edges'];
 
 
-for (const i in jsonData['entities']) {
-    nodes.push({
-        data: {
-            id: jsonData['entities'][i]['id'],
-            title: jsonData['entities'][i]['title'],
-            size: jsonData['entities'][i]['title'].length * 4,
-            color: jsonData['entities'][i]['color']
-        }
-    });
-}
+// for (const i in jsonData['nodes']) {
+//     nodes.push({
+//         data: {
+//             id: jsonData['nodes'][i]['id'],
+//             label: jsonData['nodes'][i]['label'],
+//             size: jsonData['nodes'][i]['weight'],
+//             color: jsonData['nodes'][i]['color']
+//         }
+//     });
+// }
 
-for (const i in jsonData['relations']) {
-    edges.push({
-        data: {
-            id: i,
-            source: jsonData['relations'][i]['source'],
-            target: jsonData['relations'][i]['target'],
-            label: jsonData['relations'][i]['type'],
-            weight: jsonData['relations'][i]['weight'],
-        }
-    });
-}
+// for (const i in jsonData['edges']) {
+//     edges.push({
+//         data: {
+//             id: jsonData['edges'][i]['id'],
+//             source: jsonData['edges'][i]['source'],
+//             target: jsonData['edges'][i]['target'],
+//             label: jsonData['edges'][i]['label'],
+//             weight: jsonData['edges'][i]['weight'],
+//         }
+//     });
+// }
 
 let cy = cytoscape({
     container: document.getElementById('cy'),
@@ -51,11 +56,11 @@ let cy = cytoscape({
                 "color": '#333',
                 "font-size": "8px",
                 "font-family": "helvetica",
-                "label": 'data(title)',
-                "width": 'data(size)',
-                "height": 'data(size)',
+                "label": 'data(label)',
+                "width": 'data(weight)',
+                "height": 'data(weight)',
                 "text-wrap": "wrap",
-                "text-max-width": 'data(size)',
+                "text-max-width": 'data(weight)',
                 'background-color': 'data(color)',
             }
         },
@@ -106,25 +111,17 @@ function makePopper(ele) {
                 return false;
             }
 
-            fetch('./tooltips.json')
+            fetch('http://localhost:8080/api/tooltip/' + ele.id())
                 .then(response => response.json())
                 .then(data => {
-                    let content;
-                    const i = data["tooltips"].findIndex((e) => e.id === ele.id());
-                    if (i > -1) {
-                        content = data["tooltips"][i]["html"];
-                    }
-                    else {
-                        content = 'Such Emptiness 😞';
-                    }
-
+                    console.log(data);
                     let div = document.createElement('div');
                     div.classList.add('ttip');
                     div.addEventListener('click', () => {
                         ref._tippy.hide();
                         ref._tippy.shown = false;
                     });
-                    div.innerHTML = content;
+                    div.innerHTML = data['description'];
                     ref._tippy.setContent(div);
                     ref._tippy.shown = true;
                 });
