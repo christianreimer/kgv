@@ -1,7 +1,10 @@
 package kgv
 
 import (
+	"fmt"
 	"math"
+
+	"github.com/teacat/noire"
 )
 
 const (
@@ -52,4 +55,13 @@ func adjustEdgeWeights(edges []Edge) []Edge {
 		edges[i].Data.Weight = weight
 	}
 	return edges
+}
+
+// Calculate color by increasing hue for each node
+func calculateHighlightColors(nodes []Node) []Node {
+	for i, node := range nodes {
+		c := noire.NewHex(node.Data.Color[1:])
+		nodes[i].Data.HighlightColor = fmt.Sprintf("#%s", c.Brighten(0.1).Hex())
+	}
+	return nodes
 }

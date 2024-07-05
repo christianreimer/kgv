@@ -9,6 +9,8 @@ import (
 
 type Api struct {
 	Data     kgv.GraphData
+	edges    map[string]kgv.Edge
+	nodes    map[string]kgv.Node
 	tooltips map[string]kgv.Tooltip
 }
 
@@ -30,7 +32,7 @@ func main() {
 }
 
 func NewApi() Api {
-	data, tooltips, err := kgv.Load("data/data5.json")
+	data, nodes, edges, tooltips, err := kgv.Load("data/data5.json")
 	if err != nil {
 		fmt.Println(err)
 		return Api{}
@@ -38,6 +40,8 @@ func NewApi() Api {
 
 	api := Api{
 		Data:     data,
+		edges:    edges,
+		nodes:    nodes,
 		tooltips: tooltips,
 	}
 	return api
@@ -100,7 +104,7 @@ func (a *Api) GetEdges(w http.ResponseWriter, r *http.Request) {
 // Return node with given id
 func (a *Api) GetNode(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	node, ok := a.Data.Nodes[id]
+	node, ok := a.nodes[id]
 	if !ok {
 		http.Error(w, "Node not found", http.StatusNotFound)
 		return
@@ -119,7 +123,7 @@ func (a *Api) GetNode(w http.ResponseWriter, r *http.Request) {
 // Return edge with given id
 func (a *Api) GetEdge(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	edge, ok := a.Data.Edges[id]
+	edge, ok := a.edges[id]
 	if !ok {
 		http.Error(w, "Edge not found", http.StatusNotFound)
 		return

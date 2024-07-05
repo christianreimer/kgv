@@ -11,16 +11,15 @@ import (
 type GraphData struct {
 	AllNodes []Node `json:"nodes"`
 	AllEdges []Edge `json:"edges"`
-	Nodes    map[string]Node
-	Edges    map[string]Edge
 }
 
 type NodeData struct {
-	Id     string `json:"id"`
-	Iri    string `json:"iri"`
-	Label  string `json:"label"`
-	Weight int    `json:"weight"`
-	Color  string `json:"color"`
+	Id             string `json:"id"`
+	Iri            string `json:"iri"`
+	Label          string `json:"label"`
+	Weight         int    `json:"weight"`
+	Color          string `json:"color"`
+	HighlightColor string `json:"highlightColor"`
 }
 
 type Node struct {
@@ -47,17 +46,17 @@ type Tooltip struct {
 	Description string `json:"description"`
 }
 
-func Load(fname string) (GraphData, map[string]Tooltip, error) {
+func Load(fname string) (GraphData, map[string]Node, map[string]Edge, map[string]Tooltip, error) {
 	file, err := os.Open(fname)
 	if err != nil {
-		return GraphData{}, nil, err
+		return GraphData{}, nil, nil, nil, err
 	}
 	defer file.Close()
 
 	data := GraphData{}
 	err = json.NewDecoder(file).Decode(&data)
 	if err != nil {
-		return GraphData{}, nil, err
+		return GraphData{}, nil, nil, nil, err
 	}
 
 	tooltips := map[string]Tooltip{
@@ -73,27 +72,26 @@ func Load(fname string) (GraphData, map[string]Tooltip, error) {
 	data.AllEdges = squashEdges(data.AllEdges)
 
 	data.AllNodes = adjustNodeWeights(data.AllNodes)
-	data.AllNodes = addColors(data.AllNodes)
 	remainingNodes, removedNodes := removeDummyNodes(data.AllNodes)
 	data.AllNodes = remainingNodes
 	data.AllEdges = adjustEdgeWeights(data.AllEdges)
 	data.AllEdges = pruneEdges(data.AllEdges, removedNodes)
 	data.AllNodes, data.AllEdges = adjustLabels(data.AllNodes, data.AllEdges)
 	data.AllNodes, data.AllEdges = removeDisconnectedEdges(data.AllNodes, data.AllEdges)
+	data.AllNodes = addColors(data.AllNodes)
+	data.AllNodes = calculateHighlightColors(data.AllNodes)
 
 	nodes := make(map[string]Node)
 	for _, node := range data.AllNodes {
 		nodes[node.Data.Id] = node
 	}
-	data.Nodes = nodes
 
 	edges := make(map[string]Edge)
 	for _, edge := range data.AllEdges {
 		edges[edge.Data.Id] = edge
 	}
-	data.Edges = edges
 
-	return data, tooltips, nil
+	return data, nodes, edges, tooltips, nil
 }
 
 func addColors(nodes []Node) []Node {
