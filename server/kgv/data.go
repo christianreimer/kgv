@@ -95,7 +95,7 @@ func Load(fname string) (GraphData, map[string]Node, map[string]Edge, map[string
 }
 
 func addColors(nodes []Node) []Node {
-	colors := []string{"#4C3BCF", "#3DC2EC", "#4B70F5"}
+	colors := []string{"#091849", "#1d355d", "#0f162e", "#421034", "#3b012a"}
 	for i := range nodes {
 		nodes[i].Data.Color = colors[i%len(colors)]
 	}

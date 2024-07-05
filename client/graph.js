@@ -1,6 +1,54 @@
+
 const EDGE_OPACITY = 0.5;
 const EDGE_HIGH_OPACITY = 0.85;
+const EDGE_TEXT_COLOR = '#ddd';
+const EDGE_HIGHLIGHT_COLOR = '#ddd'
+const EDGE_NORMAL_COLOR = '#666';
+const NODE_TEXT_COLOR = '#ddd';
+
 const SERVER_URL = 'http://localhost:8080/api';
+const CYTOSCAPE_LAYOUT = {
+    name: 'fcose',
+    animate: false,
+    quality: 'proof',
+    fit: true,
+    nodeDimensionsIncludeLabels: true,
+    idealEdgeLength: edge => 75,
+    nodeRepulsion: node => 145000,
+    numIter: 5000,
+};
+const NODE_STYLE = {
+    "text-valign": "center",
+    "text-halign": "center",
+    "color": NODE_TEXT_COLOR,
+    "font-size": "8px",
+    "font-family": "helvetica",
+    "label": 'data(label)',
+    "width": 'data(weight)',
+    "height": 'data(weight)',
+    "text-wrap": "wrap",
+    "text-max-width": 'data(weight)',
+    'background-color': 'data(color)',
+    'z-index': 'data(weight)',
+};
+const EDGE_STYLE = {
+    'opacity': EDGE_OPACITY,
+    'width': 'data(weight)',
+    'line-color': EDGE_NORMAL_COLOR,
+    'target-arrow-color': EDGE_NORMAL_COLOR,
+    'target-arrow-shape': 'triangle',
+    'curve-style': 'bezier',
+    'label': 'data(label)',
+    'color': NODE_TEXT_COLOR,
+    "font-size": "6px",
+    "font-family": "helvetica",
+    'text-background-color': '#111',
+    'text-background-opacity': 0.75,
+    'text-background-padding': '1px',
+    'text-wrap': 'wrap',
+    'text-max-width': '50',
+    'arrow-scale': 0.5,
+};
 
 const fetchGraph = async () => {
     return fetch(`${SERVER_URL}/graph`)
@@ -12,6 +60,43 @@ const fetchGraph = async () => {
 
 const [nodes, edges] = await fetchGraph();
 
+const State = class {
+    constructor() {
+        this.highlightedNodes = [];
+        this.highlightedEdges = [];
+    }
+    addNodeToHighlightSet(id) {
+        if (!this.highlightedNodes.includes(id)) {
+            this.highlightedNodes.push(id);
+        }
+    }
+    removeNodeFromHighlightSet(id) {
+        const idx = this.highlightedNodes.indexOf(id);
+        if (idx != -1) {
+            this.highlightedNodes.splice(idx, 1);
+        }
+    }
+    nodeIsHighlighted(id) {
+        return this.highlightedNodes.includes(id);
+    }
+    addEdgeToHighlightSet(id) {
+        if (!this.highlightedEdges.includes(id)) {
+            this.highlightedEdges.push(id);
+        }
+    }
+    removeEdgeFromHighlightSet(id) {
+        const idx = this.highlightedEdges.indexOf(id);
+        if (idx != -1) {
+            this.highlightedEdges.splice(idx, 1);
+        }
+    }
+    edgeIsHighlighted(id) {
+        return this.highlightedEdges.includes(id);
+    }
+}
+
+let state = new State();
+
 let cy = cytoscape({
     container: document.getElementById('cy'),
     elements: {
@@ -20,56 +105,16 @@ let cy = cytoscape({
     },
     style: [{
         selector: 'node',
-        style: {
-            "text-valign": "center",
-            "text-halign": "center",
-            "color": '#333',
-            "font-size": "8px",
-            "font-family": "helvetica",
-            "label": 'data(label)',
-            "width": 'data(weight)',
-            "height": 'data(weight)',
-            "text-wrap": "wrap",
-            "text-max-width": 'data(weight)',
-            'background-color': 'data(color)',
-            'z-index': 'data(weight)',
-        }
+        style: NODE_STYLE,
     },
     {
         selector: 'edge',
-        style: {
-            'opacity': EDGE_OPACITY,
-            'width': 'data(weight)',
-            'line-color': '#666',
-            'target-arrow-color': '#666',
-            'target-arrow-shape': 'triangle',
-            'curve-style': 'bezier',
-            'label': 'data(label)',
-            'color': '#ccc',
-            "font-size": "6px",
-            "font-family": "helvetica",
-            'text-background-color': '#111',
-            'text-background-opacity': 0.75,
-            'text-background-padding': '1px',
-            'text-wrap': 'wrap',
-            'text-max-width': '50',
-        }
+        style: EDGE_STYLE,
     }
     ]
 });
 
-
-cy.layout({
-    name: 'fcose',
-    animate: false,
-    quality: 'proof',
-    fit: true,
-    nodeDimensionsIncludeLabels: true,
-    idealEdgeLength: edge => 75,
-    nodeRepulsion: node => 145000,
-    numIter: 5000,
-}).run();
-
+cy.layout(CYTOSCAPE_LAYOUT).run();
 
 cy.ready(() => {
     cy.elements().forEach(function (ele) {
@@ -85,7 +130,6 @@ cy.ready(() => {
         });
     });
 });
-
 
 cy.elements().unbind('click')
 cy.elements().bind('click', (event) => {
@@ -104,61 +148,22 @@ cy.on('cxttap', "edge", (event) => {
     event.target.tippy.show();
 });
 
-
-
-let highlightedNodes = [];
-const addNodeToHighlightSet = (id) => {
-    if (!highlightedNodes.includes(id)) {
-        highlightedNodes.push(id);
-    }
-}
-
-const removeNodeFromHighlightSet = (id) => {
-    const idx = highlightedNodes.indexOf(id);
-    if (idx != -1) {
-        highlightedNodes.splice(idx, 1);
-    }
-}
-
-const nodeIsHighlighted = (id) => {
-    return highlightedNodes.includes(id);
-}
-
 const nodeHighlightToggle = (id) => {
-    if (nodeIsHighlighted(id)) {
+    if (state.nodeIsHighlighted(id)) {
         resetNode(id);
     } else {
         highlightNode(id);
     }
 }
 
-let highlightedEdges = [];
-const addEdgeToHighlightSet = (id) => {
-    if (!highlightedEdges.includes(id)) {
-        highlightedEdges.push(id);
-    }
-}
-
-const removeEdgeFromHighlightSet = (id) => {
-    const idx = highlightedEdges.indexOf(id);
-    if (idx != -1) {
-        highlightedEdges.splice(idx, 1);
-    }
-}
-
-const edgeIsHighlighted = (id) => {
-    return highlightedEdges.includes(id);
-}
-
 const edgeHighlightToggle = (id) => {
-    if (edgeIsHighlighted(id)) {
+    if (state.edgeIsHighlighted(id)) {
         resetEdge(id);
     } else {
         highlightEdge(id);
 
     }
 }
-
 
 // Highlight a node and its connected edges
 const highlightNode = (id) => {
@@ -173,7 +178,7 @@ const highlightNode = (id) => {
         elem.style('background-color', data["data"]["highlightColor"]);
         elem.style('width', data["data"]["weight"] * 1.15);
         elem.style('height', data["data"]["weight"] * 1.15);
-        addNodeToHighlightSet(id);
+        state.addNodeToHighlightSet(id);
     }).catch((error) => {
         console.error(error)
     });
@@ -190,7 +195,7 @@ const highlightNode = (id) => {
             elem.style('line-color', 'white');
             elem.style('target-arrow-color', 'white');
             elem.style('opacity', EDGE_HIGH_OPACITY)
-            addEdgeToHighlightSet(edge['data']['id']);
+            state.addEdgeToHighlightSet(edge['data']['id']);
         });
     }).catch((error) => {
         console.error(error)
@@ -210,7 +215,7 @@ const resetNode = (id) => {
         elem.style('background-color', data["data"]["color"]);
         elem.style('width', data["data"]["weight"]);
         elem.style('height', data["data"]["weight"]);
-        removeNodeFromHighlightSet(id);
+        state.removeNodeFromHighlightSet(id);
     }).catch((error) => {
         console.error(error)
     });
@@ -227,7 +232,7 @@ const resetNode = (id) => {
             elem.style('line-color', '#666');
             elem.style('target-arrow-color', '#666');
             elem.style('opacity', EDGE_OPACITY);
-            removeEdgeFromHighlightSet(edge['data']['id']);
+            state.removeEdgeFromHighlightSet(edge['data']['id']);
         });
     }).catch((error) => {
         console.error(error)
@@ -243,10 +248,10 @@ const highlightEdge = (id) => {
         throw new Error('Failed to fetch');
     }).then((data) => {
         let edge = cy.getElementById(id);
-        edge.style('line-color', 'white');
-        edge.style('target-arrow-color', 'white');
+        edge.style('line-color', EDGE_HIGHLIGHT_COLOR);
+        edge.style('target-arrow-color', EDGE_HIGHLIGHT_COLOR);
         edge.style('opacity', EDGE_HIGH_OPACITY);
-        addEdgeToHighlightSet(id);
+        state.addEdgeToHighlightSet(id);
     }).catch((error) => {
         console.error(error)
     });
@@ -281,7 +286,7 @@ const resetEdge = (id) => {
         edge.style('line-color', '#666');
         edge.style('target-arrow-color', '#666');
         edge.style('opacity', EDGE_HIGH_OPACITY);
-        removeEdgeFromHighlightSet(id);
+        state.removeEdgeFromHighlightSet(id);
     }).catch((error) => {
         console.error(error)
     });
@@ -295,7 +300,7 @@ const resetEdge = (id) => {
     }).then((data) => {
         data.forEach((node) => {
             let id = node["data"]["id"];
-            if (!nodeIsHighlighted(id)) {
+            if (!state.nodeIsHighlighted(id)) {
                 // Only reset highlight if the node was not explicitly highlighted
                 let elem = cy.getElementById(id);
                 elem.style('background-color', node["data"]["color"]);
