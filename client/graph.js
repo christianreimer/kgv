@@ -226,6 +226,8 @@ const highlightNode = (node) => {
     let elem = cy.getElementById(node['data']['id']);
     elem.style('background-color', node["data"]["highlightColor"]);
     elem.style('border-width', '2px');
+
+    console.log(calculateCentroid());
 }
 
 const unhighlightNode = (node) => {
@@ -309,6 +311,7 @@ const selectEdge = (id) => {
     }).then((data) => {
         data.forEach((node) => {
             highlightNode(node);
+            state.addNodeToHighlightSet(node["data"]["id"]);
         });
     }).catch((error) => {
         console.error(error)
@@ -347,6 +350,52 @@ const toggleTooltip = (ref, ele) => {
     return true;
 }
 
+// Calculate centroid of the selected nodes (ignore node weights)
+const calculateCentroid = () => {
+    let x = 0;
+    let y = 0;
+
+    if (state.highlightedNodes.length > 0) {
+        state.highlightedNodes.forEach((id) => {
+            let node = cy.getElementById(id);
+            x += node.position().x;
+            y += node.position().y;
+        });
+
+        x /= state.highlightedNodes.length;
+        y /= state.highlightedNodes.length;
+    } else {
+        cy.nodes().forEach((node) => {
+            x += node.position().x;
+            y += node.position().y;
+        });
+
+        x /= cy.nodes().length;
+        y /= cy.nodes().length;
+    }
+    return { x: x, y: y };
+}
+
+
+const reset = () => {
+    cy.fit();
+}
+const zoomIn = () => {
+    let center = calculateCentroid();
+    cy.zoom({
+        level: cy.zoom() * 1.2,
+        position: center,
+    });
+}
+
+const zoomOut = () => {
+    let center = calculateCentroid();
+    cy.zoom({
+        level: cy.zoom() * 0.8,
+        position: center,
+    });
+}
+
 export {
     highlightNode,
     unhighlightNode,
@@ -354,5 +403,8 @@ export {
     unhighlightEdge,
     selectNode,
     selectEdge,
+    reset,
+    zoomIn,
+    zoomOut,
     state,
 }

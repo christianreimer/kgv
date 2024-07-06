@@ -6,6 +6,9 @@ import {
     unhighlightEdge,
     selectNode,
     selectEdge,
+    reset,
+    zoomIn,
+    zoomOut,
     state,
 } from './graph.js'
 
@@ -145,6 +148,11 @@ const updateResultList = (result) => {
     let list = document.createElement("ul");
     list.classList.add("no-bullets");
 
+    if (result.length > 20) {
+        result = result.slice(0, 20);
+        console.log(result);
+    }
+
     let counter = 1;
     result.forEach((r) => {
         let elem = document.createElement("li");
@@ -229,3 +237,16 @@ const stopSearchWithResult = (id, type) => {
 }
 
 document.getElementById("searchInput").addEventListener('keyup', updateSelection);
+
+document.getElementById("zoomResetButton").addEventListener('click', () => {
+    highlightNodesAndAdges([]);
+    reset();
+});
+
+document.getElementById("zoomInButton").addEventListener('click', () => {
+    zoomIn();
+});
+
+document.getElementById("zoomOutButton").addEventListener('click', () => {
+    zoomOut();
+});
