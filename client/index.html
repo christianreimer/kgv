@@ -1,15 +1,16 @@
 <!doctype html>
-<html>
-
-<head>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.23.0/cytoscape.min.js"></script>
-    <script src="https://unpkg.com/layout-base/layout-base.js"></script>
-    <script src="https://unpkg.com/cose-base/cose-base.js"></script>
-    <script src="https://unpkg.com/cytoscape-fcose/cytoscape-fcose.js"></script>
-    <script src="https://unpkg.com/popper.js@1.14.7/dist/umd/popper.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/cytoscape-popper@1.0.4/cytoscape-popper.min.js"></script>
-    <script src="https://unpkg.com/tippy.js@4.0.1/umd/index.all.min.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/tippy.js@4.0.1/index.css" />
+<html data-theme="dark">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.23.0/cytoscape.min.js"></script>
+<script src="https://unpkg.com/layout-base/layout-base.js"></script>
+<script src="https://unpkg.com/cose-base/cose-base.js"></script>
+<script src="https://unpkg.com/cytoscape-fcose/cytoscape-fcose.js"></script>
+<script src="https://unpkg.com/popper.js@1.14.7/dist/umd/popper.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cytoscape-popper@1.0.4/cytoscape-popper.min.js"></script>
+<script src="https://unpkg.com/tippy.js@4.0.1/umd/index.all.min.js"></script>
+<!-- <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.js"></script> -->
+<link rel="stylesheet" href="https://unpkg.com/tippy.js@4.0.1/index.css" />
+<link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+<script src="https://cdn.tailwindcss.com"></script>
 </head>
 <style>
     #cy {
@@ -28,12 +29,68 @@
         line-height: 1.25em;
         text-align: left;
     }
+
+    #nav {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 999;
+        display: flex;
+        align-items: center;
+        border-radius: 5px;
+        padding: 5px;
+    }
+
+    #resultList {
+        position: absolute;
+        top: 50px;
+        left: 10px;
+        z-index: 999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border-radius: 5px;
+        /* padding: 5px; */
+        /* background: #fff; */
+        /* box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); */
+        background-color: oklch(var(--b1));
+        border: 1px solid oklch(var(--n));
+    }
+
+    ul.no-bullets {
+        list-style-type: none;
+        margin: 5;
+        padding: 5;
+    }
+
+    li {
+        padding: 5px;
+        font-size: 0.8em;
+    }
 </style>
 
 <body>
+    <div id="nav">
+        <div class="join join-vertical">
+            <label id="searchInput" data-id="searchInput" class="input input-sm input-bordered flex items-center gap-2"
+                tabindex="0">
+                <input type="text" class="grow xs" placeholder="Search" />
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"
+                    class="h-4 w-4 opacity-70">
+                    <path fill-rule="evenodd"
+                        d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z"
+                        clip-rule="evenodd" />
+                </svg>
+            </label>
+        </div>
+        <div id="resultList" tabindex="1">
+        </div>
+    </div>
+
     <div id="cy"></div>
 </body>
 
 <script src="./graph.js" type="module"></script>
+<script src="./search.js" type="module"></script>
 
 </html>

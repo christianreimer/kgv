@@ -2,8 +2,10 @@
 const EDGE_NORMAL_OPACITY = 0.5;
 const EDGE_HIGHLIGHT_OPACITY = 0.85;
 const EDGE_TEXT_COLOR = '#ddd';
+const EDGE_HIGHLIGHT_TEXT_COLOR = '#fff';
 const EDGE_HIGHLIGHT_COLOR = '#ddd'
 const EDGE_NORMAL_COLOR = '#666';
+const EDGE_MAX_WIDTH = 5;
 const NODE_TEXT_COLOR = '#ddd';
 const SERVER_URL = 'http://localhost:8080/api';
 
@@ -23,6 +25,7 @@ const NODE_STYLE = {
     "text-halign": "center",
     "color": NODE_TEXT_COLOR,
     "font-size": "8px",
+    "min-zoomed-font-size": "8px",
     "font-family": "helvetica",
     "label": 'data(label)',
     "width": 'data(weight)',
@@ -30,7 +33,8 @@ const NODE_STYLE = {
     "text-wrap": "wrap",
     "text-max-width": 'data(weight)',
     'background-color': 'data(color)',
-    'z-index': 'data(weight)',
+    'border-color': 'white',
+    'border-width': '0px',
 };
 
 const EDGE_STYLE = {
@@ -41,8 +45,9 @@ const EDGE_STYLE = {
     'target-arrow-shape': 'triangle',
     'curve-style': 'bezier',
     'label': 'data(label)',
-    'color': NODE_TEXT_COLOR,
-    "font-size": "6px",
+    'color': EDGE_TEXT_COLOR,
+    "font-size": "8px",
+    "min-zoomed-font-size": "10px",
     "font-family": "helvetica",
     'text-background-color': '#111',
     'text-background-opacity': 0.75,
@@ -220,15 +225,13 @@ const unselectNode = (id) => {
 const highlightNode = (node) => {
     let elem = cy.getElementById(node['data']['id']);
     elem.style('background-color', node["data"]["highlightColor"]);
-    elem.style('width', node["data"]["weight"] * 1.15);
-    elem.style('height', node["data"]["weight"] * 1.15);
+    elem.style('border-width', '2px');
 }
 
 const unhighlightNode = (node) => {
     let elem = cy.getElementById(node['data']['id']);
     elem.style('background-color', node["data"]["color"]);
-    elem.style('width', node["data"]["weight"]);
-    elem.style('height', node["data"]["weight"]);
+    elem.style('border-width', '0px');
 }
 
 const highlightEdge = (edge) => {
@@ -236,6 +239,12 @@ const highlightEdge = (edge) => {
     elem.style('line-color', EDGE_HIGHLIGHT_COLOR);
     elem.style('target-arrow-color', EDGE_HIGHLIGHT_COLOR);
     elem.style('opacity', EDGE_HIGHLIGHT_OPACITY)
+    elem.style('color', EDGE_HIGHLIGHT_TEXT_COLOR);
+
+    let width = edge["data"]["weight"] * 1.5;
+    width = Math.min(width, EDGE_MAX_WIDTH);
+    elem.style('width', width);
+
 }
 
 const unhighlightEdge = (edge) => {
@@ -243,6 +252,8 @@ const unhighlightEdge = (edge) => {
     elem.style('line-color', EDGE_NORMAL_COLOR);
     elem.style('target-arrow-color', EDGE_NORMAL_COLOR);
     elem.style('opacity', EDGE_NORMAL_OPACITY);
+    elem.style('color', EDGE_TEXT_COLOR);
+    elem.style('width', edge["data"]["weight"]);
 }
 
 const unselectEdge = (id) => {
@@ -298,7 +309,6 @@ const selectEdge = (id) => {
     }).then((data) => {
         data.forEach((node) => {
             highlightNode(node);
-            // state.addNodeToHighlightSet(node["data"]["id"]);
         });
     }).catch((error) => {
         console.error(error)
@@ -335,4 +345,14 @@ const toggleTooltip = (ref, ele) => {
     });
 
     return true;
+}
+
+export {
+    highlightNode,
+    unhighlightNode,
+    highlightEdge,
+    unhighlightEdge,
+    selectNode,
+    selectEdge,
+    state,
 }

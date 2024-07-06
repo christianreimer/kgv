@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"kgv/kgv"
 	"net/http"
+	"strings"
 )
 
 type Api struct {
@@ -21,9 +22,12 @@ func main() {
 	mux.HandleFunc("GET /api/graph", api.GetGraph)
 	mux.HandleFunc("GET /api/tooltip/{id}", api.GetTooltip)
 	mux.HandleFunc("GET /api/node/{id}", api.GetNode)
+	mux.HandleFunc("GET /api/nodes/{list}", api.GetNodeList)
 	mux.HandleFunc("GET /api/node/{id}/edges", api.GetEdges)
 	mux.HandleFunc("GET /api/edge/{id}", api.GetEdge)
+	mux.HandleFunc("GET /api/edges/{list}", api.GetEdgeList)
 	mux.HandleFunc("GET /api/edge/{id}/nodes", api.GetEdgeEndpoints)
+	mux.HandleFunc("GET /api/autocomplete", api.GetAutocomplete)
 
 	server := &http.Server{
 		Addr:    "localhost:8080",
@@ -122,6 +126,31 @@ func (a *Api) GetNode(w http.ResponseWriter, r *http.Request) {
 	w.Write(j)
 }
 
+// Return list of nodes with given ids
+func (a *Api) GetNodeList(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	list := r.PathValue("list")
+	ids := strings.Split(list, ",")
+	nodes := make([]kgv.Node, 0)
+
+	for _, id := range ids {
+		node, ok := a.nodes[id]
+		if !ok {
+			continue
+		}
+		nodes = append(nodes, node)
+	}
+
+	j, err := json.Marshal(nodes)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(j)
+}
+
 // Return edge with given id
 func (a *Api) GetEdge(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -132,6 +161,31 @@ func (a *Api) GetEdge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	j, err := json.Marshal(edge)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(j)
+}
+
+// Return edge with given id
+func (a *Api) GetEdgeList(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	list := r.PathValue("list")
+	ids := strings.Split(list, ",")
+	edges := make([]kgv.Edge, 0)
+
+	for _, id := range ids {
+		edge, ok := a.edges[id]
+		if !ok {
+			continue
+		}
+		edges = append(edges, edge)
+	}
+
+	j, err := json.Marshal(edges)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -162,6 +216,45 @@ func (a *Api) GetEdgeEndpoints(w http.ResponseWriter, r *http.Request) {
 	}
 
 	j, err := json.Marshal([]kgv.Node{source, target})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(j)
+}
+
+// Return array of node and edge ids along with thei labels
+func (a *Api) GetAutocomplete(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	type autocompleteItem struct {
+		Id    string `json:"id"`
+		Label string `json:"label"`
+		Type  string `json:"type"`
+	}
+
+	autocomplete := make([]autocompleteItem, 0)
+	for id, node := range a.nodes {
+		aci := autocompleteItem{
+			Id:    id,
+			Label: node.Data.Label,
+			Type:  "node",
+		}
+		autocomplete = append(autocomplete, aci)
+	}
+
+	for id, edge := range a.edges {
+		aci := autocompleteItem{
+			Id:    id,
+			Label: edge.Data.Label,
+			Type:  "edge",
+		}
+		autocomplete = append(autocomplete, aci)
+	}
+
+	j, err := json.Marshal(autocomplete)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
