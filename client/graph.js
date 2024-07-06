@@ -1,12 +1,12 @@
 
-const EDGE_OPACITY = 0.5;
-const EDGE_HIGH_OPACITY = 0.85;
+const EDGE_NORMAL_OPACITY = 0.5;
+const EDGE_HIGHLIGHT_OPACITY = 0.85;
 const EDGE_TEXT_COLOR = '#ddd';
 const EDGE_HIGHLIGHT_COLOR = '#ddd'
 const EDGE_NORMAL_COLOR = '#666';
 const NODE_TEXT_COLOR = '#ddd';
-
 const SERVER_URL = 'http://localhost:8080/api';
+
 const CYTOSCAPE_LAYOUT = {
     name: 'fcose',
     animate: false,
@@ -17,6 +17,7 @@ const CYTOSCAPE_LAYOUT = {
     nodeRepulsion: node => 145000,
     numIter: 5000,
 };
+
 const NODE_STYLE = {
     "text-valign": "center",
     "text-halign": "center",
@@ -31,8 +32,9 @@ const NODE_STYLE = {
     'background-color': 'data(color)',
     'z-index': 'data(weight)',
 };
+
 const EDGE_STYLE = {
-    'opacity': EDGE_OPACITY,
+    'opacity': EDGE_NORMAL_OPACITY,
     'width': 'data(weight)',
     'line-color': EDGE_NORMAL_COLOR,
     'target-arrow-color': EDGE_NORMAL_COLOR,
@@ -133,10 +135,19 @@ cy.ready(() => {
 
 cy.elements().unbind('click')
 cy.elements().bind('click', (event) => {
+    let id = event.target.id();
     if (event.target.isNode()) {
-        nodeHighlightToggle(event.target.id());
+        if (state.nodeIsHighlighted(id)) {
+            unselectNode(id);
+        } else {
+            selectNode(id);
+        }
     } else if (event.target.isEdge()) {
-        edgeHighlightToggle(event.target.id());
+        if (state.edgeIsHighlighted(id)) {
+            unselectEdge(id);
+        } else {
+            selectEdge(id);
+        }
     }
 });
 
@@ -148,36 +159,14 @@ cy.on('cxttap', "edge", (event) => {
     event.target.tippy.show();
 });
 
-const nodeHighlightToggle = (id) => {
-    if (state.nodeIsHighlighted(id)) {
-        resetNode(id);
-    } else {
-        highlightNode(id);
-    }
-}
-
-const edgeHighlightToggle = (id) => {
-    if (state.edgeIsHighlighted(id)) {
-        resetEdge(id);
-    } else {
-        highlightEdge(id);
-
-    }
-}
-
-// Highlight a node and its connected edges
-const highlightNode = (id) => {
-    // Highlight the node that was clicked
+const selectNode = (id) => {
     fetch(`${SERVER_URL}/node/${id}`).then((resp) => {
         if (resp.ok) {
             return resp.json();
         }
         throw new Error('Failed to fetch');
     }).then((data) => {
-        let elem = cy.getElementById(id);
-        elem.style('background-color', data["data"]["highlightColor"]);
-        elem.style('width', data["data"]["weight"] * 1.15);
-        elem.style('height', data["data"]["weight"] * 1.15);
+        highlightNode(data)
         state.addNodeToHighlightSet(id);
     }).catch((error) => {
         console.error(error)
@@ -191,10 +180,7 @@ const highlightNode = (id) => {
         throw new Error('Failed to fetch');
     }).then((data) => {
         data.forEach((edge) => {
-            let elem = cy.getElementById(edge['data']['id'])
-            elem.style('line-color', 'white');
-            elem.style('target-arrow-color', 'white');
-            elem.style('opacity', EDGE_HIGH_OPACITY)
+            highlightEdge(edge);
             state.addEdgeToHighlightSet(edge['data']['id']);
         });
     }).catch((error) => {
@@ -202,19 +188,14 @@ const highlightNode = (id) => {
     });
 }
 
-const resetNode = (id) => {
-    // Reset the node that was clicked
+const unselectNode = (id) => {
     fetch(`${SERVER_URL}/node/${id}`).then((resp) => {
         if (resp.ok) {
             return resp.json();
         }
         throw new Error('Failed to fetch');
     }).then((data) => {
-        let elem = cy.getElementById(id);
-        elem.style('background-color', 'red');
-        elem.style('background-color', data["data"]["color"]);
-        elem.style('width', data["data"]["weight"]);
-        elem.style('height', data["data"]["weight"]);
+        unhighlightNode(data);
         state.removeNodeFromHighlightSet(id);
     }).catch((error) => {
         console.error(error)
@@ -228,10 +209,7 @@ const resetNode = (id) => {
         throw new Error('Failed to fetch');
     }).then((data) => {
         data.forEach((edge) => {
-            let elem = cy.getElementById(edge['data']['id'])
-            elem.style('line-color', '#666');
-            elem.style('target-arrow-color', '#666');
-            elem.style('opacity', EDGE_OPACITY);
+            unhighlightEdge(edge);
             state.removeEdgeFromHighlightSet(edge['data']['id']);
         });
     }).catch((error) => {
@@ -239,19 +217,43 @@ const resetNode = (id) => {
     });
 }
 
-const highlightEdge = (id) => {
-    // Highlight the edge that was clicked
+const highlightNode = (node) => {
+    let elem = cy.getElementById(node['data']['id']);
+    elem.style('background-color', node["data"]["highlightColor"]);
+    elem.style('width', node["data"]["weight"] * 1.15);
+    elem.style('height', node["data"]["weight"] * 1.15);
+}
+
+const unhighlightNode = (node) => {
+    let elem = cy.getElementById(node['data']['id']);
+    elem.style('background-color', node["data"]["color"]);
+    elem.style('width', node["data"]["weight"]);
+    elem.style('height', node["data"]["weight"]);
+}
+
+const highlightEdge = (edge) => {
+    let elem = cy.getElementById(edge['data']['id'])
+    elem.style('line-color', EDGE_HIGHLIGHT_COLOR);
+    elem.style('target-arrow-color', EDGE_HIGHLIGHT_COLOR);
+    elem.style('opacity', EDGE_HIGHLIGHT_OPACITY)
+}
+
+const unhighlightEdge = (edge) => {
+    let elem = cy.getElementById(edge['data']['id']);
+    elem.style('line-color', EDGE_NORMAL_COLOR);
+    elem.style('target-arrow-color', EDGE_NORMAL_COLOR);
+    elem.style('opacity', EDGE_NORMAL_OPACITY);
+}
+
+const unselectEdge = (id) => {
     fetch(`${SERVER_URL}/edge/${id}`).then((resp) => {
         if (resp.ok) {
             return resp.json();
         }
         throw new Error('Failed to fetch');
     }).then((data) => {
-        let edge = cy.getElementById(id);
-        edge.style('line-color', EDGE_HIGHLIGHT_COLOR);
-        edge.style('target-arrow-color', EDGE_HIGHLIGHT_COLOR);
-        edge.style('opacity', EDGE_HIGH_OPACITY);
-        state.addEdgeToHighlightSet(id);
+        unhighlightEdge(data);
+        state.removeEdgeFromHighlightSet(id);
     }).catch((error) => {
         console.error(error)
     });
@@ -264,34 +266,30 @@ const highlightEdge = (id) => {
         throw new Error('Failed to fetch');
     }).then((data) => {
         data.forEach((node) => {
-            let elem = cy.getElementById(node["data"]["id"]);
-            elem.style('background-color', node["data"]["highlightColor"]);
-            elem.style('width', elem.data('weight') * 1.15);
-            elem.style('height', elem.data('weight') * 1.15);
+            if (!state.nodeIsHighlighted(node["data"]["id"])) {
+                // Unly unselect if user has not clicked on the node
+                unhighlightNode(node);
+            }
         });
     }).catch((error) => {
         console.error(error)
     });
 }
 
-const resetEdge = (id) => {
-    // Reset the edge that was clicked
+const selectEdge = (id) => {
     fetch(`${SERVER_URL}/edge/${id}`).then((resp) => {
         if (resp.ok) {
             return resp.json();
         }
         throw new Error('Failed to fetch');
     }).then((data) => {
-        let edge = cy.getElementById(id);
-        edge.style('line-color', '#666');
-        edge.style('target-arrow-color', '#666');
-        edge.style('opacity', EDGE_HIGH_OPACITY);
-        state.removeEdgeFromHighlightSet(id);
+        highlightEdge(data);
+        state.addEdgeToHighlightSet(id);
     }).catch((error) => {
         console.error(error)
     });
 
-    // Reset the nodes at each end of the edge
+    // Select the nodes at each end of the edge
     fetch(`${SERVER_URL}/edge/${id}/nodes`).then((resp) => {
         if (resp.ok) {
             return resp.json();
@@ -299,14 +297,8 @@ const resetEdge = (id) => {
         throw new Error('Failed to fetch');
     }).then((data) => {
         data.forEach((node) => {
-            let id = node["data"]["id"];
-            if (!state.nodeIsHighlighted(id)) {
-                // Only reset highlight if the node was not explicitly highlighted
-                let elem = cy.getElementById(id);
-                elem.style('background-color', node["data"]["color"]);
-                elem.style('width', node["data"]["weight"]);
-                elem.style('height', node["data"]["weight"]);
-            }
+            highlightNode(node);
+            // state.addNodeToHighlightSet(node["data"]["id"]);
         });
     }).catch((error) => {
         console.error(error)
