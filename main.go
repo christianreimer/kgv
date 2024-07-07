@@ -1,12 +1,17 @@
 package main
 
 import (
+	"embed"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"kgv/kgv"
 	"net/http"
 	"strings"
 )
+
+//go:embed static
+var static embed.FS
 
 type Api struct {
 	Data     kgv.GraphData
@@ -18,8 +23,15 @@ type Api struct {
 func main() {
 	api := NewApi()
 
+	staticFS, _ := fs.Sub(static, "static")
+
 	mux := http.NewServeMux()
+	mux.Handle("GET /", http.FileServer(http.FS(staticFS)))
+	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFileFS(w, r, staticFS, "index.html")
+	})
 	mux.HandleFunc("GET /api/graph", api.GetGraph)
+	mux.HandleFunc("GET /api/conf", api.GetConfig)
 	mux.HandleFunc("GET /api/tooltip/{id}", api.GetTooltip)
 	mux.HandleFunc("GET /api/node/{id}", api.GetNode)
 	mux.HandleFunc("GET /api/nodes/{list}", api.GetNodeList)
@@ -51,6 +63,19 @@ func NewApi() Api {
 		tooltips: tooltips,
 	}
 	return api
+}
+
+func (a *Api) GetConfig(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	config := kgv.DefaultConfig()
+	j, err := json.Marshal(config)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(j)
 }
 
 func (a *Api) GetGraph(w http.ResponseWriter, r *http.Request) {

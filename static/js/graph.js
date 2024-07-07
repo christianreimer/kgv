@@ -6,7 +6,7 @@ const EDGE_HIGHLIGHT_TEXT_COLOR = '#fff';
 const EDGE_HIGHLIGHT_COLOR = '#ddd'
 const EDGE_NORMAL_COLOR = '#666';
 const EDGE_MAX_WIDTH = 5;
-const NODE_TEXT_COLOR = '#ddd';
+const NODE_TEXT_COLOR = '#ccc';
 const SERVER_URL = 'http://localhost:8080/api';
 
 const CYTOSCAPE_LAYOUT = {
@@ -15,12 +15,14 @@ const CYTOSCAPE_LAYOUT = {
     quality: 'proof',
     fit: true,
     nodeDimensionsIncludeLabels: true,
-    idealEdgeLength: edge => 75,
-    nodeRepulsion: node => 145000,
+    idealEdgeLength: edge => 100,
+    nodeRepulsion: node => 50000,
     numIter: 5000,
 };
 
 const NODE_STYLE = {
+    'shape': 'round-rectangle',
+    // 'corner-radius': '2em',
     "text-valign": "center",
     "text-halign": "center",
     "color": NODE_TEXT_COLOR,
@@ -226,8 +228,6 @@ const highlightNode = (node) => {
     let elem = cy.getElementById(node['data']['id']);
     elem.style('background-color', node["data"]["highlightColor"]);
     elem.style('border-width', '2px');
-
-    console.log(calculateCentroid());
 }
 
 const unhighlightNode = (node) => {
@@ -279,10 +279,7 @@ const unselectEdge = (id) => {
         throw new Error('Failed to fetch');
     }).then((data) => {
         data.forEach((node) => {
-            if (!state.nodeIsHighlighted(node["data"]["id"])) {
-                // Unly unselect if user has not clicked on the node
-                unhighlightNode(node);
-            }
+            unhighlightNode(node);
         });
     }).catch((error) => {
         console.error(error)
@@ -376,10 +373,23 @@ const calculateCentroid = () => {
     return { x: x, y: y };
 }
 
+const unselectAll = () => {
+    nodes.forEach((node) => {
+        unhighlightNode(node);
+    });
+    edges.forEach((edge) => {
+        unhighlightEdge(edge);
+    });
+    state.highlightedNodes = [];
+    state.highlightedEdges = [];
+}
+
 
 const reset = () => {
+    console.log(cy.$(':selected'));
     cy.fit();
 }
+
 const zoomIn = () => {
     let center = calculateCentroid();
     cy.zoom({
@@ -396,6 +406,11 @@ const zoomOut = () => {
     });
 }
 
+const recenter = () => {
+    let selectedElements = cy.elements(':selected');
+    cy.pan(selectedElements);
+}
+
 export {
     highlightNode,
     unhighlightNode,
@@ -406,5 +421,6 @@ export {
     reset,
     zoomIn,
     zoomOut,
+    recenter,
     state,
 }

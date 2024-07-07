@@ -57,7 +57,7 @@ func adjustEdgeWeights(edges []Edge) []Edge {
 	return edges
 }
 
-// Calculate color by increasing hue for each node
+// Calculate highlight color by increasing hue for each node
 func calculateHighlightColors(nodes []Node) []Node {
 	for i, node := range nodes {
 		c := noire.NewHex(node.Data.Color[1:])

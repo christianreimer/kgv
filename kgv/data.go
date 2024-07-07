@@ -102,6 +102,7 @@ func addColors(nodes []Node) []Node {
 	return nodes
 }
 
+// Remove edges where either source or target node is null
 func pruneEdges(edges []Edge, removed map[string]bool) []Edge {
 	var cleaned []Edge
 	for _, edge := range edges {
@@ -128,6 +129,7 @@ func removeDummyNodes(nodes []Node) ([]Node, map[string]bool) {
 	return cleaned, removed
 }
 
+// Convert all labels by inserting spaces between camel case words
 func adjustLabels(nodes []Node, edges []Edge) ([]Node, []Edge) {
 	for i, node := range nodes {
 		nodes[i].Data.Label = splitCamelCase(node.Data.Label)
@@ -138,6 +140,7 @@ func adjustLabels(nodes []Node, edges []Edge) ([]Node, []Edge) {
 	return nodes, edges
 }
 
+// Convert from `word1Word2“ to `word1 word2“
 func splitCamelCase(s string) string {
 	var parts []string
 	start := 0

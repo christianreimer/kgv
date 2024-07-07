@@ -1,4 +1,5 @@
-import Fuse from 'https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.mjs'
+import Fuse from '/vendor/fuse.js@7.0.0/fuse.mjs'
+
 import {
     highlightNode,
     unhighlightNode,
@@ -9,6 +10,7 @@ import {
     reset,
     zoomIn,
     zoomOut,
+    recenter,
     state,
 } from './graph.js'
 
@@ -109,7 +111,7 @@ const fuseOptions = {
     shouldSort: true,
     // includeMatches: false,
     // findAllMatches: false,
-    minMatchCharLength: 3,
+    minMatchCharLength: 1,
     // location: 0,
     threshold: 0.4,
     // distance: 100,
@@ -150,7 +152,6 @@ const updateResultList = (result) => {
 
     if (result.length > 20) {
         result = result.slice(0, 20);
-        console.log(result);
     }
 
     let counter = 1;
@@ -160,8 +161,8 @@ const updateResultList = (result) => {
         elem.setAttribute('data-type', r['item']['type'])
         elem.textContent = r['item']['label'];
         elem.tabIndex = counter++;
-        elem.addEventListener("click", () => {
-            console.log(r['item']['id']);
+        elem.addEventListener("click", (event) => {
+            console.log("Clicked on " + event.target);
         });
         elem.addEventListener('keydown', updateSelection);
         list.appendChild(elem);
@@ -177,7 +178,7 @@ const updateResultList = (result) => {
 
 let currentFocus = -1;
 const updateSelection = (event) => {
-    if (!['ArrowDown', 'ArrowUp', 'Enter', 'Escape'].includes(event.key)) {
+    if (!['ArrowDown', 'ArrowUp', 'Enter', 'Escape', 'Click'].includes(event.key)) {
         return;
     }
 
@@ -239,7 +240,9 @@ const stopSearchWithResult = (id, type) => {
 document.getElementById("searchInput").addEventListener('keyup', updateSelection);
 
 document.getElementById("zoomResetButton").addEventListener('click', () => {
-    highlightNodesAndAdges([]);
+    document.getElementById("searchInput").value = "";
+    document.getElementById("resultList").innerHTML = "";
+    // highlightNodesAndAdges([]);
     reset();
 });
 
@@ -249,4 +252,8 @@ document.getElementById("zoomInButton").addEventListener('click', () => {
 
 document.getElementById("zoomOutButton").addEventListener('click', () => {
     zoomOut();
+});
+
+document.getElementById("resenterButton").addEventListener('click', () => {
+    recenter();
 });
