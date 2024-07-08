@@ -22,7 +22,6 @@ const CYTOSCAPE_LAYOUT = {
 
 const NODE_STYLE = {
     'shape': 'round-rectangle',
-    // 'corner-radius': '2em',
     "text-valign": "center",
     "text-halign": "center",
     "color": NODE_TEXT_COLOR,
@@ -246,7 +245,6 @@ const highlightEdge = (edge) => {
     let width = edge["data"]["weight"] * 1.5;
     width = Math.min(width, EDGE_MAX_WIDTH);
     elem.style('width', width);
-
 }
 
 const unhighlightEdge = (edge) => {
@@ -280,6 +278,8 @@ const unselectEdge = (id) => {
     }).then((data) => {
         data.forEach((node) => {
             unhighlightNode(node);
+            state.removeNodeFromHighlightSet(node["data"]["id"]);
+
         });
     }).catch((error) => {
         console.error(error)
@@ -386,7 +386,7 @@ const unselectAll = () => {
 
 
 const reset = () => {
-    console.log(cy.$(':selected'));
+    unselectAll();
     cy.fit();
 }
 
@@ -407,8 +407,9 @@ const zoomOut = () => {
 }
 
 const recenter = () => {
-    let selectedElements = cy.elements(':selected');
-    cy.pan(selectedElements);
+    let center = calculateCentroid();
+    cy.pan(cy.center());
+    console.log("cy center:", cy.pan(), " centroid:", center);
 }
 
 export {

@@ -1,0 +1,67 @@
+#cy {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    background: oklch(var(--b1));
+}
+
+.ttip {
+    max-width: 300px;
+    font-family: Arial, sans-serif;
+    font-size: 1.25em;
+    line-height: 1.25em;
+    text-align: left;
+}
+
+#searchNav {
+    position: absolute;
+    top: 2px;
+    left: 5px;
+    z-index: 9;
+    display: flex;
+    align-items: center;
+    border-radius: 5px;
+    padding: 5px;
+    background-color: oklch(var(--b1));
+}
+
+#buttonNav {
+    position: absolute;
+    top: 40px;
+    left: 0px;
+    z-index: 99;
+    display: flex;
+    align-items: center;
+    /* border-radius: 5px; */
+    /* padding: 5px; */
+    /* background-color: red; */
+    /* oklch(var(--b1)); */
+}
+
+#resultList {
+    position: absolute;
+    top: 55px;
+    left: 10px;
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-radius: 5px;
+    background-color: oklch(var(--b2));
+    /* border: 1px solid oklch(var(--n)); */
+}
+
+ul.no-bullets {
+    list-style-type: none;
+    line-height: 1.75em;
+    margin: 5;
+    padding: 5;
+    cursor: pointer
+}
+
+li {
+    padding: 5px;
+    font-size: 0.8em;
+}

@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"kgv/kgv"
 	"net/http"
+	"os"
 	"strings"
 )
 
@@ -22,14 +23,15 @@ type Api struct {
 
 func main() {
 	api := NewApi()
-
-	staticFS, _ := fs.Sub(static, "static")
-
 	mux := http.NewServeMux()
+
+	staticFS, err := fs.Sub(static, "static")
+	if err != nil {
+		panic(err)
+	}
 	mux.Handle("GET /", http.FileServer(http.FS(staticFS)))
-	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFileFS(w, r, staticFS, "index.html")
-	})
+
+	mux.HandleFunc("GET /{$}", index)
 	mux.HandleFunc("GET /api/graph", api.GetGraph)
 	mux.HandleFunc("GET /api/conf", api.GetConfig)
 	mux.HandleFunc("GET /api/tooltip/{id}", api.GetTooltip)
@@ -41,8 +43,16 @@ func main() {
 	mux.HandleFunc("GET /api/edge/{id}/nodes", api.GetEdgeEndpoints)
 	mux.HandleFunc("GET /api/autocomplete", api.GetAutocomplete)
 
+	host, ok := os.LookupEnv("HOST")
+	if !ok {
+		host = "localhost"
+	}
+	port, ok := os.LookupEnv("PORT")
+	if !ok {
+		port = "8080"
+	}
 	server := &http.Server{
-		Addr:    "localhost:8080",
+		Addr:    fmt.Sprintf("%s:%s", host, port),
 		Handler: mux,
 	}
 	fmt.Printf("Listening on %s\n", server.Addr)
@@ -65,6 +75,10 @@ func NewApi() Api {
 	return api
 }
 
+func index(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "static/index.html")
+}
+
 func (a *Api) GetConfig(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	config := kgv.DefaultConfig()
@@ -79,7 +93,7 @@ func (a *Api) GetConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Api) GetGraph(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	// w.Header().Set("Access-Control-Allow-Origin", "*")
 	j, err := json.Marshal(a.Data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
