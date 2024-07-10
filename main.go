@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"embed"
 	"encoding/json"
 	"fmt"
@@ -11,8 +12,14 @@ import (
 	"strings"
 )
 
+//go:embed static/index.html
+var indexHtml []byte
+
 //go:embed static
 var static embed.FS
+
+//go:embed data/data5.json
+var dataFile []byte
 
 type Api struct {
 	Data     kgv.GraphData
@@ -60,7 +67,8 @@ func main() {
 }
 
 func NewApi() Api {
-	data, nodes, edges, tooltips, err := kgv.Load("data/data5.json")
+	reader := bytes.NewReader(dataFile)
+	data, nodes, edges, tooltips, err := kgv.Load(reader)
 	if err != nil {
 		fmt.Println(err)
 		return Api{}
@@ -76,7 +84,9 @@ func NewApi() Api {
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "static/index.html")
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(http.StatusOK)
+	w.Write(indexHtml)
 }
 
 func (a *Api) GetConfig(w http.ResponseWriter, r *http.Request) {
@@ -87,13 +97,12 @@ func (a *Api) GetConfig(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
+
 	w.WriteHeader(http.StatusOK)
 	w.Write(j)
 }
 
 func (a *Api) GetGraph(w http.ResponseWriter, r *http.Request) {
-	// w.Header().Set("Access-Control-Allow-Origin", "*")
 	j, err := json.Marshal(a.Data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -105,7 +114,6 @@ func (a *Api) GetGraph(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Api) GetTooltip(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	id := r.PathValue("id")
 	tooltip, ok := a.tooltips[id]
 	if !ok {
@@ -128,7 +136,6 @@ func (a *Api) GetTooltip(w http.ResponseWriter, r *http.Request) {
 
 // Return array of all edges that connect to node with given id
 func (a *Api) GetEdges(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	id := r.PathValue("id")
 	edges := make([]kgv.Edge, 0)
 	for _, edge := range a.Data.AllEdges {
@@ -148,7 +155,6 @@ func (a *Api) GetEdges(w http.ResponseWriter, r *http.Request) {
 
 // Return node with given id
 func (a *Api) GetNode(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	id := r.PathValue("id")
 	node, ok := a.nodes[id]
 	if !ok {
@@ -167,7 +173,6 @@ func (a *Api) GetNode(w http.ResponseWriter, r *http.Request) {
 
 // Return list of nodes with given ids
 func (a *Api) GetNodeList(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	list := r.PathValue("list")
 	ids := strings.Split(list, ",")
 	nodes := make([]kgv.Node, 0)
@@ -192,7 +197,6 @@ func (a *Api) GetNodeList(w http.ResponseWriter, r *http.Request) {
 
 // Return edge with given id
 func (a *Api) GetEdge(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	id := r.PathValue("id")
 	edge, ok := a.edges[id]
 	if !ok {
@@ -211,7 +215,6 @@ func (a *Api) GetEdge(w http.ResponseWriter, r *http.Request) {
 
 // Return edge with given id
 func (a *Api) GetEdgeList(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	list := r.PathValue("list")
 	ids := strings.Split(list, ",")
 	edges := make([]kgv.Edge, 0)
@@ -236,7 +239,6 @@ func (a *Api) GetEdgeList(w http.ResponseWriter, r *http.Request) {
 
 // Return the source and target nodes for an edge with given id
 func (a *Api) GetEdgeEndpoints(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	id := r.PathValue("id")
 	edge, ok := a.edges[id]
 	if !ok {
@@ -266,8 +268,6 @@ func (a *Api) GetEdgeEndpoints(w http.ResponseWriter, r *http.Request) {
 
 // Return array of node and edge ids along with thei labels
 func (a *Api) GetAutocomplete(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-
 	type autocompleteItem struct {
 		Id    string `json:"id"`
 		Label string `json:"label"`

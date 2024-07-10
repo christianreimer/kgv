@@ -3,7 +3,7 @@ package kgv
 import (
 	"encoding/json"
 	"fmt"
-	"os"
+	"io"
 	"strings"
 	"unicode"
 )
@@ -46,15 +46,9 @@ type Tooltip struct {
 	Description string `json:"description"`
 }
 
-func Load(fname string) (GraphData, map[string]Node, map[string]Edge, map[string]Tooltip, error) {
-	file, err := os.Open(fname)
-	if err != nil {
-		return GraphData{}, nil, nil, nil, err
-	}
-	defer file.Close()
-
+func Load(r io.Reader) (GraphData, map[string]Node, map[string]Edge, map[string]Tooltip, error) {
 	data := GraphData{}
-	err = json.NewDecoder(file).Decode(&data)
+	err := json.NewDecoder(r).Decode(&data)
 	if err != nil {
 		return GraphData{}, nil, nil, nil, err
 	}
